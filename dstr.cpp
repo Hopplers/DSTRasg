@@ -169,19 +169,29 @@ void sortCSVExcludingFirstRow(vector<vector<string>>& data, string sortType, int
 }
 
 int main() {
-    string inputFile = "output.csv";
+    string inputFile = "mudah-apartment-kl-selangor mmz.csv";
     string outputFile = "output2.csv";
-
-    cout << "Sorting for ";
 
     // Read the CSV file
     vector<vector<string>> data = readCSV(inputFile);
 
+    clock_t start, end;
+    double cpu_time_used;
+
+    // Starts measure of time
+    start = clock();
+
     // Sort the CSV data based on the second column using merge sort, excluding the first row
-    sortCSVExcludingFirstRow(data, "quickSort", 0); // Manually change here first "quickSort" "mergeSort", and which column
+    sortCSVExcludingFirstRow(data, "quickSort", 1); // Manually change here first "quickSort" "mergeSort", and which column
+
+    // Stops measure of time
+    end = clock();
+    cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
 
     // Write the sorted data back to a new CSV file
     writeCSV(outputFile, data);
+
+    cout << "Time taken to sort: " << cpu_time_used << " seconds" << endl;
 
     cout << "CSV file sorted successfully!" << endl;
     return 0;
