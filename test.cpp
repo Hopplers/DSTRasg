@@ -3,95 +3,93 @@
 #include <sstream>
 #include <vector>
 #include <string>
-#include <cstdlib>
 
 using namespace std;
 
-// Function to split a line into tokens
-vector<string> split(const string& line, char delimiter) {
-    vector<string> tokens;
-    stringstream ss(line);
-    string token;
-    while (getline(ss, token, delimiter)) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
 
-// Function to read the CSV file
-vector<vector<string>> readCSV(const string& filename) {
+struct Property {
+    string ads_id;
+    string prop_name;
+    int completion_year;
+    double monthly_rent;
+    string location;
+    string property_type;
+    int rooms;
+    int parking;
+    int bathroom;
+    double size;
+    string furnished;
+
+    // Constructor
+    Property(string ads_id, string prop_name, int completion_year, double monthly_rent, 
+             string location, string property_type, int rooms, int parking, 
+             int bathroom, double size, string furnished)
+        : ads_id(ads_id), prop_name(prop_name), completion_year(completion_year), monthly_rent(monthly_rent), 
+          location(location), property_type(property_type), rooms(rooms), parking(parking), 
+          bathroom(bathroom), size(size), furnished(furnished) {}
+};
+
+
+// Read CSV file and return vector of Property
+vector<Property> readPropertiesFromCSV(const string& filename) {
+    vector<Property> properties;
     ifstream file(filename);
-    vector<vector<string>> data;
+
+    if (!file.is_open()) {
+        cerr << "Error opening file!" << endl;
+        return properties;
+    }
+
     string line;
-    if (getline(file, line)) {
-        data.push_back(split(line, ',')); // Store the header row
-    }
+    // Removing header
+    getline(file, line); 
+
     while (getline(file, line)) {
-        data.push_back(split(line, ','));
-    }
-    return data;
-}
+        istringstream ss(line);
+        string ads_id, prop_name, location, property_type, furnished;
+        int completion_year, rooms, parking, bathroom;
+        double monthly_rent, size;
 
-// Function to write the sorted data back to a CSV file
-void writeCSV(const string& filename, const vector<vector<string>>& data) {
-    ofstream file(filename);
-    for (size_t i = 0; i < data.size(); ++i) {
-        for (size_t j = 0; j < data[i].size(); ++j) {
-            file << data[i][j];
-            if (j < data[i].size() - 1) {
-                file << ",";
-            }
-        }
-        file << "\n";
-    }
-}
+        getline(ss, ads_id, ',');
+        getline(ss, prop_name, ',');
+        ss >> completion_year; ss.ignore();
+        ss >> monthly_rent; ss.ignore();
+        getline(ss, location, ',');
+        getline(ss, property_type, ',');
+        ss >> rooms; ss.ignore();
+        ss >> parking; ss.ignore();
+        ss >> bathroom; ss.ignore();
+        ss >> size; ss.ignore();
+        getline(ss, furnished, ',');
 
-// Partition function for quicksort
-int partition(vector<vector<string>>& data, int left, int right, int column) {
-    string pivot = data[right][column]; // Choose the rightmost element as the pivot
-    int i = left - 1;
-
-    for (int j = left; j < right; ++j) {
-        if (data[j][column] <= pivot) {
-            i++;
-            swap(data[i], data[j]);
-        }
+        properties.emplace_back(ads_id, prop_name, completion_year, monthly_rent, location, property_type, rooms, parking, bathroom, size, furnished);
     }
 
-    swap(data[i + 1], data[right]);
-    return i + 1;
+    file.close();
+    return properties;
 }
 
-// Quicksort function
-void quickSort(vector<vector<string>>& data, int left, int right, int column) {
-    if (left < right) {
-        int pi = partition(data, left, right, column);
+void printProperty(const Property& property) {
+    cout << "Ads ID: " << property.ads_id << "\n"
+         << "Property Name: " << property.prop_name << "\n"
+         << "Completion Year: " << property.completion_year << "\n"
+         << "Monthly Rent: " << property.monthly_rent << "\n"
+         << "Location: " << property.location << "\n"
+         << "Property Type: " << property.property_type << "\n"
+         << "Rooms: " << property.rooms << "\n"
+         << "Parking Spaces: " << property.parking << "\n"
+         << "Bathrooms: " << property.bathroom << "\n"
+         << "Size: " << property.size << "\n"
+         << "Furnished: " << property.furnished << "\n";
+}
 
-        quickSort(data, left, pi - 1, column);
-        quickSort(data, pi + 1, right, column);
+int main () {
+    vector<Property> propertyList = readPropertiesFromCSV ("output.csv");
+
+    for (const auto& property : propertyList) {
+        printProperty(property);
+        cout << endl;  
     }
-}
 
-// Function to sort the CSV data excluding the first row (header)
-void sortCSVExcludingFirstRow(vector<vector<string>>& data, int column) {
-    if (data.size() > 1) { // Ensure there is more than one row (excluding header) to sort
-        quickSort(data, 1, data.size() - 1, column); // Start sorting from index 1 to skip the first row
-    }
-}
-
-int main() {
-    string inputFile = "output.csv";
-    string outputFile = "output2.csv";
-
-    // Read the CSV file
-    vector<vector<string>> data = readCSV(inputFile);
-
-    // Sort the CSV data based on the specified column using quicksort, excluding the first row
-    sortCSVExcludingFirstRow(data, 0); // Change '6' to the desired column index for sorting
-
-    // Write the sorted data back to a new CSV file
-    writeCSV(outputFile, data);
-
-    cout << "CSV file sorted successfully!" << endl;
     return 0;
 }
