@@ -21,6 +21,7 @@ struct Property {
 
     Property() = default;
 
+    // Constructor
     Property(int ads_id, string prop_name, int completion_year, string monthly_rent, 
              string location, string property_type, int rooms, int parking, 
              int bathroom, string size, string furnished)
@@ -36,6 +37,7 @@ struct Node {
     Node(const Property& property) : data(property), next(nullptr) {}
 };
 
+// Read property data from CSV
 Node* readPropertiesFromCSV(const string& filename) {
     ifstream file(filename);
 
@@ -103,6 +105,8 @@ Node* getTail(Node* head) {
     return head;
 }
 
+
+// Assist in partition function for column selection
 bool compareProperties(const Property& a, const Property& b, int choice) {
     switch (choice) {
         case 1: return a.ads_id < b.ads_id;
@@ -175,7 +179,6 @@ Node* partition(Node* head, Node* end, Node** newHead, Node** newEnd, int choice
     return pivot;
 }
 
-
 Node* quickSortRecur(Node* head, Node* end, int choice) {
     if (!head || head == end) {
         return head;
@@ -206,24 +209,6 @@ Node* quickSortRecur(Node* head, Node* end, int choice) {
 
 void quickSort(Node** headRef, int choice) {
     (*headRef) = quickSortRecur(*headRef, getTail(*headRef), choice);
-}
-
-void printProperties(Node* head) {
-    Node* current = head;
-    while (current != nullptr) {
-        cout << current->data.ads_id << ", "
-             << current->data.prop_name << ", "
-             << current->data.completion_year << ", "
-             << current->data.monthly_rent << ", "
-             << current->data.location << ", "
-             << current->data.property_type << ", "
-             << current->data.rooms << ", "
-             << current->data.parking << ", "
-             << current->data.bathroom << ", "
-             << current->data.size << ", "
-             << current->data.furnished << endl;
-        current = current->next;
-    }
 }
 
 Node* merge(Node* left, Node* right, int choice) {
@@ -360,20 +345,54 @@ void mergeSort(Node** headRef, int choice) {
 }
 
 void sortingFunction(int sortingAlgo, Node** properties,int sortingColumn) {
-    auto start = chrono::high_resolution_clock::now();
+    auto start = chrono::high_resolution_clock::now(); // Records start time
 
     sortingAlgo == 1 ? mergeSort(properties, sortingColumn) : quickSort(properties, sortingColumn);
 
-    auto stop = chrono::high_resolution_clock::now();
+    auto stop = chrono::high_resolution_clock::now(); // Records end time
     auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
 
     cout << "Time taken for sorting: " << duration.count() << " milliseconds" << endl;
+    cout << "Sorting of CSV file is done!" << endl;
+}
+
+// Writing sorted data into CSV
+void writePropertiesToCSV(const string& filename, Node* head) {
+    ofstream file(filename);
+
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << filename << endl;
+        return;
+    }
+
+    file << "ads_id,prop_name,completion_year,monthly_rent,location,property_type,rooms,parking,bathroom,size,furnished" << endl;
+
+    Node* current = head;
+    while (current != nullptr) {
+        Property& property = current->data;
+        file << property.ads_id << ","
+             << property.prop_name << ","
+             << property.completion_year << ","
+             << property.monthly_rent << ","
+             << property.location << ","
+             << property.property_type << ","
+             << property.rooms << ","
+             << property.parking << ","
+             << property.bathroom << ","
+             << property.size << ","
+             << property.furnished << endl;
+
+        current = current->next;
+    }
+
+    file.close();
 }
 
 int main() {
-    Node* properties = readPropertiesFromCSV("mudah-apartment-kl-selangor mmz.csv");
+    string inputFile = "mudah-apartment-kl-selangor mmz.csv";
+    string outputFile = "output2.csv";
+    Node* properties = readPropertiesFromCSV(inputFile);
     int sortingAlgo, sortingColumn;
-
 
     cout << "Select Sorting Algorithm: " << endl << "1. Merge Sort" << endl << "2. Quick Sort" << endl;
     cin >> sortingAlgo;
@@ -392,6 +411,8 @@ int main() {
     cin >> sortingColumn;
 
     sortingFunction(sortingAlgo, &properties, sortingColumn);
+
+    writePropertiesToCSV(outputFile, properties);
 
     return 0;
 }
