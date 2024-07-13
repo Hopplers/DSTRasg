@@ -37,6 +37,19 @@ struct Node {
     Node(const Property& property) : data(property), next(nullptr) {}
 };
 
+// To solve the bug of error reading due to comma in data
+string getCSVField(istringstream& ss) {
+    string field;
+    if (ss.peek() == '"') {
+        ss.ignore();
+        getline(ss, field, '"');
+        ss.ignore(); // skip the comma after the closing quote
+    } else {
+        getline(ss, field, ',');
+    }
+    return field;
+}
+
 // Read property data from CSV
 Node* readPropertiesFromCSV(const string& filename) {
     ifstream file(filename);
@@ -58,24 +71,29 @@ Node* readPropertiesFromCSV(const string& filename) {
         string ads_id_str, completion_year_str, rooms_str, parking_str, bathroom_str;
         int ads_id, completion_year, rooms, parking, bathroom;
 
-        getline(ss, ads_id_str, ',');
-        getline(ss, prop_name, ',');
-        getline(ss, completion_year_str, ',');
-        getline(ss, monthly_rent, ',');
-        getline(ss, location, ',');
-        getline(ss, property_type, ',');
-        getline(ss, rooms_str, ',');
-        getline(ss, parking_str, ',');
-        getline(ss, bathroom_str, ',');
-        getline(ss, size, ',');
-        getline(ss, furnished, ',');
+        ads_id_str = getCSVField(ss);
+        prop_name = getCSVField(ss);
+        completion_year_str = getCSVField(ss);
+        monthly_rent = getCSVField(ss);
+        location = getCSVField(ss);
+        property_type = getCSVField(ss);
+        rooms_str = getCSVField(ss);
+        parking_str = getCSVField(ss);
+        bathroom_str = getCSVField(ss);
+        size = getCSVField(ss);
+        furnished = getCSVField(ss);
 
         ads_id = ads_id_str.empty() ? 0 : atoi(ads_id_str.c_str());
         completion_year = completion_year_str.empty() ? 0 : atoi(completion_year_str.c_str());
         rooms = rooms_str.empty() ? 0 : atoi(rooms_str.c_str());
         parking = parking_str.empty() ? 0 : atoi(parking_str.c_str());
         bathroom = bathroom_str.empty() ? 0 : atoi(bathroom_str.c_str());
-        if (prop_name.empty()) prop_name = "-";
+        // if empty make it -, if contains add "" to make a valid csv cell data
+        if (prop_name.empty()){
+            prop_name = "-";
+        } else if(prop_name.find(',') != string::npos){
+            prop_name = "\"" + prop_name + "\"";
+        }
         if (monthly_rent.empty()) monthly_rent = "-";
         if (location.empty()) location = "-";
         if (property_type.empty()) property_type = "-";

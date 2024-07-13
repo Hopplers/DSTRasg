@@ -2,7 +2,7 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <ctime>
+#include <chrono>
 
 using namespace std;
 
@@ -21,6 +21,7 @@ struct Property {
 
     Property() = default;
 
+    // Constructor
     Property(int ads_id, string prop_name, int completion_year, string monthly_rent, 
              string location, string property_type, int rooms, int parking, 
              int bathroom, string size, string furnished)
@@ -36,6 +37,20 @@ struct Node {
     Node(const Property& property) : data(property), next(nullptr) {}
 };
 
+// To solve the bug of error reading due to comma in data
+string getCSVField(istringstream& ss) {
+    string field;
+    if (ss.peek() == '"') {
+        ss.ignore();
+        getline(ss, field, '"');
+        ss.ignore(); // skip the comma after the closing quote
+    } else {
+        getline(ss, field, ',');
+    }
+    return field;
+}
+
+// Read property data from CSV
 Node* readPropertiesFromCSV(const string& filename) {
     ifstream file(filename);
 
@@ -56,24 +71,28 @@ Node* readPropertiesFromCSV(const string& filename) {
         string ads_id_str, completion_year_str, rooms_str, parking_str, bathroom_str;
         int ads_id, completion_year, rooms, parking, bathroom;
 
-        getline(ss, ads_id_str, ',');
-        getline(ss, prop_name, ',');
-        getline(ss, completion_year_str, ',');
-        getline(ss, monthly_rent, ',');
-        getline(ss, location, ',');
-        getline(ss, property_type, ',');
-        getline(ss, rooms_str, ',');
-        getline(ss, parking_str, ',');
-        getline(ss, bathroom_str, ',');
-        getline(ss, size, ',');
-        getline(ss, furnished, ',');
+        ads_id_str = getCSVField(ss);
+        prop_name = getCSVField(ss);
+        completion_year_str = getCSVField(ss);
+        monthly_rent = getCSVField(ss);
+        location = getCSVField(ss);
+        property_type = getCSVField(ss);
+        rooms_str = getCSVField(ss);
+        parking_str = getCSVField(ss);
+        bathroom_str = getCSVField(ss);
+        size = getCSVField(ss);
+        furnished = getCSVField(ss);
 
         ads_id = ads_id_str.empty() ? 0 : atoi(ads_id_str.c_str());
         completion_year = completion_year_str.empty() ? 0 : atoi(completion_year_str.c_str());
         rooms = rooms_str.empty() ? 0 : atoi(rooms_str.c_str());
         parking = parking_str.empty() ? 0 : atoi(parking_str.c_str());
         bathroom = bathroom_str.empty() ? 0 : atoi(bathroom_str.c_str());
-        if (prop_name.empty()) prop_name = "-";
+        if (prop_name.empty()){
+            prop_name = "-";
+        } else if(prop_name.find(',') != string::npos){
+            prop_name = "\"" + prop_name + "\"";
+        }
         if (monthly_rent.empty()) monthly_rent = "-";
         if (location.empty()) location = "-";
         if (property_type.empty()) property_type = "-";
@@ -103,6 +122,8 @@ Node* getTail(Node* head) {
     return head;
 }
 
+
+// Assist in partition function for column selection
 bool compareProperties(const Property& a, const Property& b, int choice) {
     switch (choice) {
         case 1: return a.ads_id < b.ads_id;
@@ -120,8 +141,28 @@ bool compareProperties(const Property& a, const Property& b, int choice) {
     return false;
 }
 
+Node* getMiddle(Node* head) {
+    if (head == nullptr) return head;
+
+    Node* slow = head;
+    Node* fast = head->next;
+
+    while (fast != nullptr) {
+        fast = fast->next;
+        if (fast != nullptr) {
+            slow = slow->next;
+            fast = fast->next;
+        }
+    }
+
+    return slow;
+}
 
 Node* partition(Node* head, Node* end, Node** newHead, Node** newEnd, int choice) {
+    // Median of three pivot selection
+    Node* mid = getMiddle(head);
+    swap(mid->data, end->data);
+
     Node* pivot = end;
     Node* prev = nullptr;
     Node* cur = head;
@@ -185,41 +226,6 @@ Node* quickSortRecur(Node* head, Node* end, int choice) {
 
 void quickSort(Node** headRef, int choice) {
     (*headRef) = quickSortRecur(*headRef, getTail(*headRef), choice);
-}
-
-void printProperties(Node* head) {
-    Node* current = head;
-    while (current != nullptr) {
-        cout << current->data.ads_id << ", "
-             << current->data.prop_name << ", "
-             << current->data.completion_year << ", "
-             << current->data.monthly_rent << ", "
-             << current->data.location << ", "
-             << current->data.property_type << ", "
-             << current->data.rooms << ", "
-             << current->data.parking << ", "
-             << current->data.bathroom << ", "
-             << current->data.size << ", "
-             << current->data.furnished << endl;
-        current = current->next;
-    }
-}
-
-Node* getMiddle(Node* head) {
-    if (head == nullptr) return head;
-
-    Node* slow = head;
-    Node* fast = head->next;
-
-    while (fast != nullptr) {
-        fast = fast->next;
-        if (fast != nullptr) {
-            slow = slow->next;
-            fast = fast->next;
-        }
-    }
-
-    return slow;
 }
 
 Node* merge(Node* left, Node* right, int choice) {
@@ -356,14 +362,54 @@ void mergeSort(Node** headRef, int choice) {
 }
 
 void sortingFunction(int sortingAlgo, Node** properties,int sortingColumn) {
+    auto start = chrono::high_resolution_clock::now(); // Records start time
+
     sortingAlgo == 1 ? mergeSort(properties, sortingColumn) : quickSort(properties, sortingColumn);
+
+    auto stop = chrono::high_resolution_clock::now(); // Records end time
+    auto duration = chrono::duration_cast<chrono::milliseconds>(stop - start);
+
+    cout << "Time taken for sorting: " << duration.count() << " milliseconds" << endl;
+    cout << "Sorting of CSV file is done!" << endl;
+}
+
+// Writing sorted data into CSV
+void writePropertiesToCSV(const string& filename, Node* head) {
+    ofstream file(filename);
+
+    if (!file.is_open()) {
+        cerr << "Error opening file: " << filename << endl;
+        return;
+    }
+
+    file << "ads_id,prop_name,completion_year,monthly_rent,location,property_type,rooms,parking,bathroom,size,furnished" << endl;
+
+    Node* current = head;
+    while (current != nullptr) {
+        Property& property = current->data;
+        file << property.ads_id << ","
+             << property.prop_name << ","
+             << property.completion_year << ","
+             << property.monthly_rent << ","
+             << property.location << ","
+             << property.property_type << ","
+             << property.rooms << ","
+             << property.parking << ","
+             << property.bathroom << ","
+             << property.size << ","
+             << property.furnished << endl;
+
+        current = current->next;
+    }
+
+    file.close();
 }
 
 int main() {
-    Node* properties = readPropertiesFromCSV("mudah-apartment-kl-selangor mmz.csv");
+    string inputFile = "output.csv";
+    string outputFile = "output2.csv";
+    Node* properties = readPropertiesFromCSV(inputFile);
     int sortingAlgo, sortingColumn;
-    clock_t start, end;
-    double cpu_time_used;
 
     cout << "Select Sorting Algorithm: " << endl << "1. Merge Sort" << endl << "2. Quick Sort" << endl;
     cin >> sortingAlgo;
@@ -381,14 +427,9 @@ int main() {
          << "11. Furnishing Status" << endl;
     cin >> sortingColumn;
 
-    start = clock();
-
     sortingFunction(sortingAlgo, &properties, sortingColumn);
 
-    end = clock();
-    cpu_time_used = ((double) (end - start));
-
-    cout << "Time taken to sort: " << cpu_time_used << " milliseconds" << endl;
+    writePropertiesToCSV(outputFile, properties);
 
     return 0;
 }
