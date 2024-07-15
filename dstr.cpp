@@ -208,7 +208,8 @@ Node* partition(Node* head, Node* end, Node** newHead, Node** newEnd, int choice
     return pivot;
 }
 
-Node* quickSortRecur(Node* head, Node* end, int choice) {
+Node* quickSortRecur(Node* head, Node* end, int choice, int& auxSpace) {
+
     if (!head || head == end) {
         return head;
     }
@@ -225,22 +226,28 @@ Node* quickSortRecur(Node* head, Node* end, int choice) {
         }
         tmp->next = nullptr;
 
-        newHead = quickSortRecur(newHead, tmp, choice);
+        newHead = quickSortRecur(newHead, tmp, choice, auxSpace);
 
         tmp = getTail(newHead);
         tmp->next = pivot;
     }
 
-    pivot->next = quickSortRecur(pivot->next, newEnd, choice);
+    pivot->next = quickSortRecur(pivot->next, newEnd, choice, auxSpace);
+
+    // Calculate additional space used in this call
+    int localSpace = sizeof(Node) * 5; 
+    auxSpace += localSpace;
 
     return newHead;
 }
 
 void quickSort(Node** headRef, int choice) {
-    (*headRef) = quickSortRecur(*headRef, getTail(*headRef), choice);
+    int auxSpace = sizeof(Node*) * 3;
+    (*headRef) = quickSortRecur(*headRef, getTail(*headRef), choice, auxSpace);
+    cout << "Auxiliary space used: " << auxSpace << " bytes" << endl;
 }
 
-Node* merge(Node* left, Node* right, int choice) {
+Node* merge(Node* left, Node* right, int choice, int& auxSpace) {
     Node* result = nullptr;
 
     if (left == nullptr)
@@ -252,108 +259,112 @@ Node* merge(Node* left, Node* right, int choice) {
         case 1: 
             if (left->data.ads_id <= right->data.ads_id) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 2:
             if (left->data.prop_name <= right->data.prop_name) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 3:
             if (left->data.completion_year <= right->data.completion_year) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 4:
             if (left->data.monthly_rent <= right->data.monthly_rent) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 5:
             if (left->data.location <= right->data.location) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 6:
             if (left->data.property_type <= right->data.property_type) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 7:
             if (left->data.rooms <= right->data.rooms) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 8:
             if (left->data.parking <= right->data.parking) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 9:
             if (left->data.bathroom <= right->data.bathroom) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 10:
             if (left->data.size <= right->data.size) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
         case 11:
             if (left->data.furnished <= right->data.furnished) {
                 result = left;
-                result->next = merge(left->next, right, choice);
+                result->next = merge(left->next, right, choice, auxSpace);
             } else {
                 result = right;
-                result->next = merge(left, right->next, choice);
+                result->next = merge(left, right->next, choice, auxSpace);
             }
             break;
     }
 
+    // Calculate additional space used in this call
+    int localSpace = sizeof(Node) * 3;
+    auxSpace += localSpace;
+
     return result;
 }
 
-void mergeSort(Node** headRef, int choice) {
+void mergeSortRecur(Node** headRef, int choice, int& auxSpace) {
     Node* head = *headRef;
     Node* left;
     Node* right;
@@ -366,11 +377,17 @@ void mergeSort(Node** headRef, int choice) {
     Node* nextToMiddle = middle->next;
     middle->next = nullptr;
 
-    mergeSort(&head, choice);
-    mergeSort(&nextToMiddle, choice);
+    mergeSortRecur(&head, choice, auxSpace);
+    mergeSortRecur(&nextToMiddle, choice, auxSpace);
 
-    *headRef = merge(head, nextToMiddle, choice);
+    *headRef = merge(head, nextToMiddle, choice, auxSpace);
 
+}
+
+void mergeSort(Node** headRef, int choice) {
+    int auxSpace = sizeof(Node*) * 3; 
+    mergeSortRecur(headRef, choice, auxSpace);
+    cout << "Auxiliary space used: " << auxSpace << " bytes" << endl;
 }
 
 void sortingFunction(int sortingAlgo, Node** properties,int sortingColumn) {
