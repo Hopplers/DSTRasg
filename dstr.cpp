@@ -3,6 +3,7 @@
 #include <sstream>
 #include <string>
 #include <chrono>
+#include <vector>
 
 using namespace std;
 
@@ -50,20 +51,18 @@ string getCSVField(istringstream& ss) {
     return field;
 }
 
-// Read property data from CSV
-Node* readPropertiesFromCSV(const string& filename) {
+// Function to read property data from CSV into an array
+vector<Property> readPropertiesFromCSVToArray(const string& filename) {
     ifstream file(filename);
+    vector<Property> properties;
 
     if (!file.is_open()) {
         cerr << "Error opening file: " << filename << endl;
-        return nullptr;
+        return properties;
     }
 
     string line;
     getline(file, line); // Removing header
-
-    Node* head = nullptr;
-    Node* tail = nullptr;
 
     while (getline(file, line)) {
         istringstream ss(line);
@@ -101,6 +100,19 @@ Node* readPropertiesFromCSV(const string& filename) {
         if (furnished.empty()) furnished = "-";
 
         Property property(ads_id, prop_name, completion_year, monthly_rent, location, property_type, rooms, parking, bathroom, size, furnished);
+        properties.push_back(property);
+    }
+
+    file.close();
+    return properties;
+}
+
+// Function to convert array to linked list
+Node* convertArrayToLinkedList(const vector<Property>& properties) {
+    Node* head = nullptr;
+    Node* tail = nullptr;
+
+    for (const auto& property : properties) {
         Node* newNode = new Node(property);
 
         if (head == nullptr) {
@@ -112,7 +124,6 @@ Node* readPropertiesFromCSV(const string& filename) {
         }
     }
 
-    file.close();
     return head;
 }
 
@@ -409,7 +420,8 @@ void writePropertiesToCSV(const string& filename, Node* head) {
 int main() {
     string inputFile = "mudah-apartment-kl-selangor mmz.csv";
     string outputFile = "output2.csv";
-    Node* properties = readPropertiesFromCSV(inputFile);
+    vector<Property> propertiesArray = readPropertiesFromCSVToArray(inputFile);
+     Node* properties = convertArrayToLinkedList(propertiesArray);
     int sortingAlgo, sortingColumn;
 
     cout << "Select Sorting Algorithm: " << endl << "1. Merge Sort" << endl << "2. Quick Sort" << endl;
